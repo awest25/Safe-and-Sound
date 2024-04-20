@@ -5,6 +5,18 @@ import {
   Scripts,
   ScrollRestoration,
 } from "@remix-run/react";
+import type { LinksFunction } from "@remix-run/node";
+import mapboxgl from "mapbox-gl";
+
+import Dashboard from "./routes/dashboard";
+import stylesheet from "~/tailwind.css?url";
+
+mapboxgl.accessToken = "pk.eyJ1IjoiYWp0YWRlbyIsImEiOiJjbHY4Ym56czMwMzJmMmlyeXJpaGx3aHBoIn0.oMQb-_b4NrGmhtVkwn-O1Q"
+
+// tainwind css styling
+export const links: LinksFunction = () => [
+  { rel: "stylesheet", href: stylesheet },
+];
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -16,7 +28,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        {children}
+        <Dashboard />
         <ScrollRestoration />
         <Scripts />
       </body>
