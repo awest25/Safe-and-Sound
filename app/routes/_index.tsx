@@ -49,16 +49,41 @@ export const loader: LoaderFunction = async () => {
 
   const airbnbData = await db.collection("airbnb_full").aggregate(airbnbPipeline).toArray();
 
+  const crimePipeline = [
+    {
+      $geoNear: {
+        near: {
+          type: "Point",
+          coordinates: [-118.42477876658972, 34.04836118390573]
+        },
+        key: "location",
+        distanceField: "dist.calculated",
+        maxDistance: 36055
+      }
+    },
+    {
+      $project: {
+        _id: 1,
+        location: 1,
+        distance: "$dist.calculated"
+      }
+    }
+  ] 
+
+  const crimeData = await db.collection("crime_la").aggregate(crimePipeline).toArray();
+
   // TODO: get crimeData, covidData, concentrationData
 
   console.log("Successfully queried data 🎉")
   return json({ 
-    airbnb: airbnbData
+    airbnb: airbnbData, 
+    crime: crimeData
   });
 };
 
 export default function Index() {
-  const [showCrime, setShowCrime] = useState(true);
+  const [showAirbnb, setshowAirbnb] = useState(true);
+  const [showCrime, setshowCrime] = useState(true);
   const [showCovid, setShowCovid] = useState(true)
   const [showConcentration, setShowConcentration] = useState(true)
   const loaderData = useLoaderData<typeof loader>();
@@ -78,10 +103,25 @@ export default function Index() {
     })
   }
 
+  const crimeData: FeatureCollection = {
+    type: 'FeatureCollection',
+    features: loaderData.crime.map((x) => {
+      return {
+        type: 'Feature',
+        geometry: x.location
+      }
+    })
+  }
+
+
   // TODO: get crimeData, covidData, concentrationData in geoJSON format
 
+  const handleAirbnbChange = (event) => {
+    setshowAirbnb(event.target.checked)
+    console.log(event.target.checked)
+  }
   const handleCrimeChange = (event) => {
-    setShowCrime(event.target.checked)
+    setshowCrime(event.target.checked)
     console.log(event.target.checked)
   }
 
@@ -174,9 +214,14 @@ export default function Index() {
           // onMouseMove={onHover}
         >
           <Source type="geojson" data={airbnbData}>
-            <Layer {...airbnbPointLayer} layout={{ visibility: showCrime ? 'visible' : 'none' }} />
-            {/* <Layer {...treesHeatLayer} layout={{visibility: showCrime ? 'visible' : 'none'}}/>
-            <Layer {...treesPointLayer} layout={{visibility: showCrime ? 'visible' : 'none'}}/> */}
+            <Layer {...airbnbPointLayer} layout={{ visibility: showAirbnb ? 'visible' : 'none' }} />
+            {/* {/* <Layer {...treesHeatLayer} layout={{visibility: showAirbnb ? 'visible' : 'none'}}/> */}
+            {/* <Layer {...crimeHeatLayer} layout={{visibility: showAirbnb ? 'visible' : 'none'}}/>  */}
+          </Source>
+          <Source type="geojson" data={crimeData}>
+            {/* <Layer {...airbnbPointLayer} layout={{ visibility: showAirbnb ? 'visible' : 'none' }} /> */}
+            {/* {/* <Layer {...treesHeatLayer} layout={{visibility: showAirbnb ? 'visible' : 'none'}}/> */}
+            <Layer {...crimeHeatLayer} layout={{visibility: showCrime ? 'visible' : 'none'}}/>
           </Source>
           {/* {hoverInfo && (
           <div className="tooltip" style={{left: hoverInfo.longitude, top: hoverInfo.latitude}}>
@@ -190,8 +235,13 @@ export default function Index() {
           <h3>Marker, Popup, NavigationControl and FullscreenControl </h3>
           <div>
             <label htmlFor="crime">AirBnBs: </label>
+            <input type="checkbox" id="airbnb" name="airbnb" checked={showAirbnb} onChange={handleAirbnbChange}></input>
+          </div>
+          <div>
+            <label htmlFor="crime">Crime </label>
             <input type="checkbox" id="crime" name="crime" checked={showCrime} onChange={handleCrimeChange}></input>
           </div>
+
         </div>
         </>
       </div>
