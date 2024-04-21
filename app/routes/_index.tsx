@@ -4,7 +4,7 @@ import { Map, Source, Layer} from "react-map-gl";
 import type { HeatmapLayer, CircleLayer } from "react-map-gl";
 import { json } from "@remix-run/react";
 import connectToDatabase from '../utils/mongodb.js';
-import { useLoaderData } from "@remix-run/react";
+import { Link, useLoaderData } from "@remix-run/react";
 import type { FeatureCollection } from 'geojson';
 import { useCallback } from "react";
 import '../overlay.css';
@@ -88,6 +88,7 @@ export default function Index() {
         type: 'Feature',
         geometry: x.location,
         properties: {
+          _id: x._id,
           listing_url: x.listing_url,
           name: x.name,
           price: x.price,
@@ -287,7 +288,8 @@ export default function Index() {
           </Source>
           {hoverInfo && (
             <div className="tooltip" style={{left: hoverInfo.x, top: hoverInfo.y}}>
-              <h2><a href={hoverInfo.feature.properties.listing_url}>{hoverInfo.feature.properties.name}</a></h2>
+              <h2><Link to={`/${hoverInfo.feature.properties._id}`}>{hoverInfo.feature.properties.name}</Link></h2>
+              <p>{hoverInfo.feature.properties._id}</p>
               <p>{hoverInfo.feature.properties.room_type}</p>
               <p>{hoverInfo.feature.properties.price}</p>
             </div>
