@@ -3,13 +3,6 @@ import numpy as np
 import sys
 import json
 
-# crime dataset calls it "LAT" and "LONG"
-def rename_lat_long_columns(s):
-    if s == "LAT":
-        return "latitude"
-    if s == "LONG":
-        return "longitude"
-
 def rename_string(s):
     return s.replace(" ", "_").lower()
 
@@ -32,9 +25,6 @@ if __name__ == "__main__":
 
     df = pd.read_csv(file_path)
     df = df.rename(columns=rename_string)
-
-    # Rename columns
-    df.apply(lambda x: rename_lat_long_columns(x.name), axis=0)
 
     # Check if long and lat are valid
     df.apply(lambda x: check_long_lat(x["longitude"], x["latitude"]), axis=1)
