@@ -1,5 +1,4 @@
 import { useState } from "react";
-import data from '../trees.json';
 import { Map, Source, Layer } from "react-map-gl";
 import type { HeatmapLayer, CircleLayer } from "react-map-gl";
 import { json } from "@remix-run/react";
@@ -7,15 +6,18 @@ import clientPromise from '~/utils/mongodb.js';
 import { useLoaderData } from "@remix-run/react";
 
 export let loader = async () => {
+  console.log("loader");
   const client = await clientPromise;
   const db = client.db('safe-and-sound');
-  const collection = db.collection('crime');
+  const collection = db.collection('airbnb_full');
+  console.log("helo:" + collection);
   const data = await collection.find({}).toArray();
+  console.log("data:" + data);
   return json({ data });
 };
 
 export default function Dashboard() {
-  const data = useLoaderData();
+  const data = useLoaderData<typeof loader>();
   const [showCrime, setShowCrime] = useState(true);
 
   console.log(data);
