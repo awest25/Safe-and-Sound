@@ -1,11 +1,15 @@
 import type { MetaFunction, LoaderFunction } from "@remix-run/node";
 import { useState } from "react";
-import { Map, Source, Layer } from "react-map-gl";
+import { Map, Source, Layer} from "react-map-gl";
+import { Popup } from "react-map-gl";
 import type { HeatmapLayer, CircleLayer } from "react-map-gl";
 import { json } from "@remix-run/react";
 import connectToDatabase from '../utils/mongodb.js';
 import { useLoaderData } from "@remix-run/react";
 import type { FeatureCollection } from 'geojson';
+import { useCallback } from "react";
+// import ControlPanel from './control_panel';
+import '../overlay.css';
 
 export const meta: MetaFunction = () => {
   return [
@@ -51,7 +55,13 @@ export const loader: LoaderFunction = async () => {
 
 export default function Index() {
   const [showCrime, setShowCrime] = useState(true);
+  // const [showPopup, setShowPopup] = useState<boolean>(true);
   const loaderData = useLoaderData<typeof loader>();
+  // const [popupInfo, setPopupInfo] = useState(null);
+  const [hoverInfo, setHoverInfo] = useState(null);
+
+  console.log(loaderData[0].location.coordinates[0]);
+
 
   const airbnbData: FeatureCollection = {
     type: 'FeatureCollection',
@@ -62,6 +72,25 @@ export default function Index() {
       }
     })
   }
+
+  const onHover = useCallback(event => {
+    const {
+      features
+    } = event;
+    const hoveredFeature = features && features[0];
+  
+    if (hoveredFeature) {
+      const { coordinates } = hoveredFeature.geometry;
+      console.log(hoveredFeature)
+      // setHoverInfo({
+      //   longitude: event.lngLat[0],
+      //   latitude: event.lngLat[1],
+      //   listing_url: hoveredFeature.listing_url
+      // });
+    } else {
+      setHoverInfo(null);
+    }
+  }, []);
 
   const handleCrimeChange = (event) => {
     setShowCrime(event.target.checked)
@@ -143,26 +172,43 @@ export default function Index() {
 
   return (
     <div className="h-screen">
-      <h1 className="text-3xl font-bold underline">Dashboard</h1>
-      <div>
-        <label htmlFor="crime">Crime Incidents:</label>
-        <input type="checkbox" id="crime" name="crime" checked={showCrime} onChange={handleCrimeChange}></input>
+      <div className="flex justify-center p-6 title"> 
+        <h1 className="text-3xl font-bold no-underline">Dashboard</h1>
       </div>
-      <Map
-        initialViewState={{
-          longitude: -118.42477876658972,
-          latitude: 34.04836118390573,
-          zoom: 12
-        }}
-        mapStyle='mapbox://styles/mapbox/streets-v12'
-        mapboxAccessToken="pk.eyJ1IjoiYWp0YWRlbyIsImEiOiJjbHY4Ym56czMwMzJmMmlyeXJpaGx3aHBoIn0.oMQb-_b4NrGmhtVkwn-O1Q"
-      >
-        <Source type="geojson" data={airbnbData}>
-          <Layer {...airbnbPointLayer} layout={{ visibility: showCrime ? 'visible' : 'none' }} />
-          {/* <Layer {...treesHeatLayer} layout={{visibility: showCrime ? 'visible' : 'none'}}/>
-          <Layer {...treesPointLayer} layout={{visibility: showCrime ? 'visible' : 'none'}}/> */}
-        </Source>
-      </Map>
+      <div className="w-3/4 h-3/4 mx-auto">
+        <>
+        <Map
+          initialViewState={{
+            longitude: -118.42477876658972,
+            latitude: 34.04836118390573,
+            zoom: 12
+          }}
+          mapStyle='mapbox://styles/mapbox/streets-v12'
+          mapboxAccessToken="pk.eyJ1IjoiYWp0YWRlbyIsImEiOiJjbHY4Ym56czMwMzJmMmlyeXJpaGx3aHBoIn0.oMQb-_b4NrGmhtVkwn-O1Q"
+          onMouseMove={onHover}
+        >
+          <Source type="geojson" data={airbnbData}>
+            <Layer {...airbnbPointLayer} layout={{ visibility: showCrime ? 'visible' : 'none' }} />
+            {/* <Layer {...treesHeatLayer} layout={{visibility: showCrime ? 'visible' : 'none'}}/>
+            <Layer {...treesPointLayer} layout={{visibility: showCrime ? 'visible' : 'none'}}/> */}
+          </Source>
+          {/* {hoverInfo && (
+          <div className="tooltip" style={{left: hoverInfo.longitude, top: hoverInfo.latitude}}>
+            <div>State: {hoverInfo.listing_url}</div>
+          </div>
+          )} */}
+          
+        </Map>
+        {/* <ControlPanel /> */}
+        <div className="control-panel">
+          <h3>Marker, Popup, NavigationControl and FullscreenControl </h3>
+          <div>
+            <label htmlFor="crime">AirBnBs: </label>
+            <input type="checkbox" id="crime" name="crime" checked={showCrime} onChange={handleCrimeChange}></input>
+          </div>
+        </div>
+        </>
+      </div>
     </div>
   )
 }
