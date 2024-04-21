@@ -89,6 +89,7 @@ export default function Index() {
   const loaderData = useLoaderData<typeof loader>();
   const [hoverInfo, setHoverInfo] = useState(null);
   const [tooltipFrozen, setTooltipFrozen] = useState(false);
+  const [showNeighborhoods, setShowNeighborhoods] = useState(false);
 
   const airbnbData: FeatureCollection = {
     type: 'FeatureCollection',
@@ -166,6 +167,10 @@ export default function Index() {
 
   const handleConcentrationChange = (event) => {
     setShowConcentration(event.target.checked)
+  }
+
+  const handleNeighborhoodsChange = (event) => {
+    setShowNeighborhoods(event.target.checked)
   }
 
   const crimeHeatLayer: HeatmapLayer = {
@@ -252,8 +257,8 @@ export default function Index() {
     source: 'neighborhoods',
     layout: {},
     paint: {
-      'line-color': '#088', // Color of the line
-      'line-width': 2,     // Width of the line in pixels
+      'line-color': '#6b6b76', // Color of the line
+      'line-width': 1,     // Width of the line in pixels
     }
   };
   
@@ -288,13 +293,20 @@ export default function Index() {
           <Layer {...concentrationHeatLayer} layout={{ visibility: showConcentration ? 'visible' : 'none' }} />
         </Source>
         <Source type="geojson" data={polygonsData}>
-            <Layer {...neighborhoodLayer} />
+            <Layer {...neighborhoodLayer} layout={{ visibility: showNeighborhoods ? 'visible' : 'none' }}/>
           </Source>
       </Map>
       <div className="control-panel">
         <h1>Safe and Sound</h1>
         <h3>Ensuring safety at your home away from home.</h3>
         <div className="toggle-container">
+        <div>
+            <div className="toggle">
+              <label htmlFor="neighborhoods">Neighborhoods: </label>
+              <input type="checkbox" id="neighborhoods" name="neighborhoods" checked={showNeighborhoods} onChange={handleNeighborhoodsChange}></input>
+            </div>
+            <a href="https://github.com/CityOfLosAngeles/covid19-indicators/blob/master/data/la_countywide_statistical_areas.geojson" target="_blank">Source: City of Los Angeles</a>
+          </div>
           <div>
             <div className="toggle">
               <label htmlFor="crime">Crime Incidents: </label>
