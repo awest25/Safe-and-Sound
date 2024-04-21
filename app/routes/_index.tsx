@@ -29,9 +29,10 @@ export const loader: LoaderFunction = async () => {
                         location: 1, 
                         listing_url: 1, 
                         name: 1, 
-                        // description: 1, 
-                        // picture_url: 1, 
                         price: 1,
+                        location: 1,
+                        room_type: 1,
+                        review_scores_rating: 1,
                       }
   const airbnbData = await db.collection("airbnb_full").find({}, { projection: fieldsWeWant }).toArray();
   console.log("Successfully pulled airbnb data....")
@@ -57,24 +58,38 @@ export default function Index() {
   // const [popupInfo, setPopupInfo] = useState(null);
   const [hoverInfo, setHoverInfo] = useState(null);
 
-  // console.log(loaderData[0].location.coordinates[0]);
-
 
   const airbnbData: FeatureCollection = {
     type: 'FeatureCollection',
     features: loaderData.airbnb.map((x) => {
       return {
         type: 'Feature',
-        geometry: x.location
+        geometry: x.location,
+        properties: {
+          listing_url: x.listing_url,
+          name: x.name,
+          price: x.price,
+          room_type: x.room_type,
+          rating: x.review_scores_rating
+        }
       }
     })
   }
 
   // TODO: get crimeData, covidData, concentrationData in geoJSON format
+  const onHover = useCallback(event => {
+    const {
+      features,
+      point: {x, y}
+    } = event;
+    const hoveredFeature = features && features[0];
+
+    // prettier-ignore
+    setHoverInfo(hoveredFeature && {feature: hoveredFeature, x, y});
+  }, []);
 
   const handleCrimeChange = (event) => {
     setShowCrime(event.target.checked)
-    console.log(event.target.checked)
   }
 
   const crimeHeatLayer: HeatmapLayer = {
@@ -163,18 +178,19 @@ export default function Index() {
           }}
           mapStyle='mapbox://styles/mapbox/streets-v12'
           mapboxAccessToken="pk.eyJ1IjoiYWp0YWRlbyIsImEiOiJjbHY4Ym56czMwMzJmMmlyeXJpaGx3aHBoIn0.oMQb-_b4NrGmhtVkwn-O1Q"
-          // onMouseMove={onHover}
+          interactiveLayerIds={['airbnb-point']}
+          onMouseMove={onHover}
         >
           <Source type="geojson" data={airbnbData}>
             <Layer {...airbnbPointLayer} layout={{ visibility: showCrime ? 'visible' : 'none' }} />
-            {/* <Layer {...treesHeatLayer} layout={{visibility: showCrime ? 'visible' : 'none'}}/>
-            <Layer {...treesPointLayer} layout={{visibility: showCrime ? 'visible' : 'none'}}/> */}
           </Source>
-          {/* {hoverInfo && (
-          <div className="tooltip" style={{left: hoverInfo.longitude, top: hoverInfo.latitude}}>
-            <div>State: {hoverInfo.listing_url}</div>
-          </div>
-          )} */}
+          {hoverInfo && (
+            <div className="tooltip" style={{left: hoverInfo.x, top: hoverInfo.y}}>
+              <h2><a href={hoverInfo.feature.properties.listing_url}>{hoverInfo.feature.properties.name}</a></h2>
+              <p>{hoverInfo.feature.properties.room_type}</p>
+              <p>{hoverInfo.feature.properties.price}</p>
+            </div>
+          )}
           
         </Map>
         {/* <ControlPanel /> */}
