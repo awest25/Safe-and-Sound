@@ -1,10 +1,24 @@
-import { useState} from "react";
+import { useState } from "react";
 import data from '../trees.json';
 import { Map, Source, Layer } from "react-map-gl";
 import type { HeatmapLayer, CircleLayer } from "react-map-gl";
+import { json } from "@remix-run/react";
+import clientPromise from '~/utils/mongodb.js';
+import { useLoaderData } from "@remix-run/react";
+
+export let loader = async () => {
+  const client = await clientPromise;
+  const db = client.db('safe-and-sound');
+  const collection = db.collection('crime');
+  const data = await collection.find({}).toArray();
+  return json({ data });
+};
 
 export default function Dashboard() {
+  const data = useLoaderData();
   const [showCrime, setShowCrime] = useState(true);
+
+  console.log(data);
 
   const handleCrimeChange = (event) => {
     setShowCrime(event.target.checked)
