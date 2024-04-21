@@ -1,14 +1,12 @@
 import type { MetaFunction, LoaderFunction } from "@remix-run/node";
 import { useState } from "react";
 import { Map, Source, Layer} from "react-map-gl";
-import { Popup } from "react-map-gl";
 import type { HeatmapLayer, CircleLayer } from "react-map-gl";
 import { json } from "@remix-run/react";
 import connectToDatabase from '../utils/mongodb.js';
 import { useLoaderData } from "@remix-run/react";
 import type { FeatureCollection } from 'geojson';
 import { useCallback } from "react";
-// import ControlPanel from './control_panel';
 import '../overlay.css';
 
 export const meta: MetaFunction = () => {
@@ -30,7 +28,6 @@ export const loader: LoaderFunction = async () => {
                         listing_url: 1, 
                         name: 1, 
                         price: 1,
-                        location: 1,
                         room_type: 1,
                         review_scores_rating: 1,
                       }
@@ -79,7 +76,7 @@ export default function Index() {
 
   const crimeData: FeatureCollection = {
     type: 'FeatureCollection',
-    features: loaderData.airbnb.map((x) => {
+    features: loaderData.crime.map((x) => {
       return {
         type: 'Feature',
         geometry: x.location
