@@ -22,36 +22,28 @@ export const loader: LoaderFunction = async () => {
   console.log("Running loader...");
   const client = await connectToDatabase();
   const db = client.db("safe-and-sound");
+  
+  // Query ALL of the airbnb data for Los Angeles
+  // This takes forever
+  const fieldsWeWant = { _id : 1, 
+                        location: 1, 
+                        listing_url: 1, 
+                        name: 1, 
+                        // description: 1, 
+                        // picture_url: 1, 
+                        price: 1,
+                      }
+  const airbnbData = await db.collection("airbnb_full").find({}, { projection: fieldsWeWant }).toArray();
+  console.log("Successfully pulled airbnb data....")
 
-  const airbnbPipeline = [
-    {
-      $geoNear: {
-        near: {
-          type: "Point",
-          coordinates: [-118.42477876658972, 34.04836118390573]
-        },
-        key: "location",
-        distanceField: "dist.calculated",
-        maxDistance: 36055
-      }
-    },
-    {
-      $project: {
-        _id: 1,
-        listing_url: 1,
-        name: 1,
-        address: 1,
-        location: 1,
-        distance: "$dist.calculated"
-      }
-    }
-  ]
-
-  const airbnbData = await db.collection("airbnb_full").aggregate(airbnbPipeline).toArray();
+  // Arbitrarily limit the number of crime data points to 1000
+  // TODO: write a query that gets the most recent crime data
+  const crimeData = await db.collection("crime_la").find({}).limit(1000).toArray();
+  console.log("Successfully pulled crime data....")
 
   // TODO: get crimeData, covidData, concentrationData
 
-  console.log("Successfully queried data 🎉")
+  console.log("Successfully queried all data 🎉")
   return json({ 
     airbnb: airbnbData
   });
