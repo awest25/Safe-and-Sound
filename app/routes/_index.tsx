@@ -46,7 +46,8 @@ export const loader: LoaderFunction = async () => {
 
   console.log("Successfully queried all data 🎉")
   return json({ 
-    airbnb: airbnbData
+    airbnb: airbnbData,
+    crime: crimeData
   });
 };
 
@@ -72,6 +73,16 @@ export default function Index() {
           room_type: x.room_type,
           rating: x.review_scores_rating
         }
+      }
+    })
+  }
+
+  const crimeData: FeatureCollection = {
+    type: 'FeatureCollection',
+    features: loaderData.airbnb.map((x) => {
+      return {
+        type: 'Feature',
+        geometry: x.location
       }
     })
   }
@@ -182,7 +193,7 @@ export default function Index() {
           onMouseMove={onHover}
         >
           <Source type="geojson" data={airbnbData}>
-            <Layer {...airbnbPointLayer} layout={{ visibility: showCrime ? 'visible' : 'none' }} />
+            <Layer {...airbnbPointLayer} />
           </Source>
           {hoverInfo && (
             <div className="tooltip" style={{left: hoverInfo.x, top: hoverInfo.y}}>
@@ -191,13 +202,15 @@ export default function Index() {
               <p>{hoverInfo.feature.properties.price}</p>
             </div>
           )}
+          <Source type="geojson" data={crimeData}>
+            <Layer {...crimeHeatLayer} layout={{ visibility: showCrime ? 'visible' : 'none' }} />
+          </Source>
           
         </Map>
-        {/* <ControlPanel /> */}
         <div className="control-panel">
           <h3>Marker, Popup, NavigationControl and FullscreenControl </h3>
           <div>
-            <label htmlFor="crime">AirBnBs: </label>
+            <label htmlFor="crime">Crime: </label>
             <input type="checkbox" id="crime" name="crime" checked={showCrime} onChange={handleCrimeChange}></input>
           </div>
         </div>
