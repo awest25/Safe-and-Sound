@@ -31,7 +31,7 @@ export const loader: LoaderFunction = async () => {
                         room_type: 1,
                         review_scores_rating: 1,
                       }
-  const airbnbData = await db.collection("airbnb_full").find({}, { projection: fieldsWeWant }).toArray();
+  const airbnbData = await db.collection("airbnb_full").find({}, { projection: fieldsWeWant }).limit(5000).toArray();
   console.log("Successfully pulled airbnb data....")
 
   // Arbitrarily limit the number of crime data points to 1000
@@ -151,22 +151,6 @@ export default function Index() {
     source: 'crime',
     maxzoom: 15,
     paint: {
-      // increase weight as diameter breast height increases
-      'heatmap-weight': {
-        property: 'dbh',
-        type: 'exponential',
-        stops: [
-          [1, 0],
-          [62, 1]
-        ]
-      },
-      // increase intensity as zoom level increases
-      'heatmap-intensity': {
-        stops: [
-          [11, 1],
-          [15, 3]
-        ]
-      },
       // assign color values be applied to points depending on their density
       'heatmap-color': [
         'interpolate',
@@ -175,13 +159,11 @@ export default function Index() {
         0,
         'rgba(255, 235, 235, 0)', // lightest red, almost transparent
         0.2,
-        'rgb(255, 205, 205)', // very light red
-        0.4,
-        'rgb(255, 152, 152)', // light red
-        0.6,
-        'rgb(255, 99, 99)', // medium red
+        '#FDE727', // very light red
+        0.5,
+        '#218C8D', // light red
         0.8,
-        'rgb(255, 0, 0)' // full red
+        '#450D56' // full red
       ],
       // increase radius as zoom increases
       'heatmap-radius': {
@@ -190,15 +172,8 @@ export default function Index() {
           [15, 20]
         ]
       },
-      // decrease opacity to transition into the circle layer
-      'heatmap-opacity': {
-        default: 1,
-        stops: [
-          [14, 1],
-          [15, 0]
-        ]
-      }
-    }
+      'heatmap-opacity': 0.7
+    },
   }
 
   const concentrationHeatLayer: HeatmapLayer = {
@@ -207,37 +182,19 @@ export default function Index() {
     source: 'concentration',
     maxzoom: 15,
     paint: {
-      // increase weight as diameter breast height increases
-      'heatmap-weight': {
-        property: 'dbh',
-        type: 'exponential',
-        stops: [
-          [1, 0],
-          [62, 1]
-        ]
-      },
-      // increase intensity as zoom level increases
-      'heatmap-intensity': {
-        stops: [
-          [11, 1],
-          [15, 3]
-        ]
-      },
       // assign color values be applied to points depending on their density
       'heatmap-color': [
         'interpolate',
         ['linear'],
         ['heatmap-density'],
         0,
-        'rgba(236,222,239,0)',
+        'rgba(255, 235, 235, 0)', // lightest red, almost transparent
         0.2,
-        'rgb(208,209,230)',
-        0.4,
-        'rgb(166,189,219)',
-        0.6,
-        'rgb(103,169,207)',
-        0.8,
-        'rgb(28,144,153)'
+        '#FCFDC0', // very light red
+        0.5,
+        '#B83778', // light red
+        1,
+        '#000000' // full red
       ],
       // increase radius as zoom increases
       'heatmap-radius': {
@@ -246,16 +203,9 @@ export default function Index() {
           [15, 20]
         ]
       },
-      // decrease opacity to transition into the circle layer
-      'heatmap-opacity': {
-        default: 1,
-        stops: [
-          [14, 1],
-          [15, 0]
-        ]
-      }
-    }
+      'heatmap-opacity': 0.7
   }
+}
 
   const airbnbPointLayer: CircleLayer = {
     id: 'airbnb-point',
@@ -268,7 +218,8 @@ export default function Index() {
           [12, 2],
           [22, 180]
         ]
-      }
+      },
+      'circle-color': '#EF5351'
     },
   }
 
@@ -287,7 +238,7 @@ export default function Index() {
         onClick={onClick}
       >
         <Source type="geojson" data={airbnbData}>
-          <Layer {...airbnbPointLayer} />
+          <Layer {...airbnbPointLayer} beforeId='crime-heat'/>
         </Source>
         {hoverInfo && (
           <div className="tooltip" style={{left: hoverInfo.x, top: hoverInfo.y}}>
@@ -297,7 +248,7 @@ export default function Index() {
           </div>
         )}
         <Source type="geojson" data={crimeData}>
-          <Layer {...crimeHeatLayer} layout={{ visibility: showCrime ? 'visible' : 'none' }} />
+          <Layer {...crimeHeatLayer} layout={{ visibility: showCrime ? 'visible' : 'none' }} beforeId='concentration-heat'/>
         </Source>
         <Source type="geojson" data={concentrationData}>
           <Layer {...concentrationHeatLayer} layout={{ visibility: showConcentration ? 'visible' : 'none' }} />
@@ -307,13 +258,23 @@ export default function Index() {
       <div className="control-panel">
         <h1>Safe and Sound</h1>
         <h3>Ensuring safety at your home away from home.</h3>
-        <div className="toggle">
-          <label htmlFor="crime">Crime: </label>
-          <input type="checkbox" id="crime" name="crime" checked={showCrime} onChange={handleCrimeChange}></input>
-        </div>
-        <div className="toggle">
-          <label htmlFor="concentration">Concentration: </label>
-          <input type="checkbox" id="concentration" name="concentration" checked={showConcentration} onChange={handleConcentrationChange}></input>
+        <div className="toggle-container">
+          <div>
+            <div className="toggle">
+              <label htmlFor="crime">Crime Incidents: </label>
+              <input type="checkbox" id="crime" name="crime" checked={showCrime} onChange={handleCrimeChange}></input>
+            </div>
+            <div className="crime-gradient"></div>
+            <a href="https://data.lacity.org/Public-Safety/Crime-Data-from-2020-to-Present/2nrs-mtv8/about_data" target="_blank">Source: LAPD</a>
+          </div>
+          <div>
+            <div className="toggle">
+              <label htmlFor="concentration">Hazardous Air Pollutants: </label>
+              <input type="checkbox" id="concentration" name="concentration" checked={showConcentration} onChange={handleConcentrationChange}></input>
+            </div>
+            <div className="concentration-gradient"></div>
+            <a href="https://aqs.epa.gov/aqsweb/airdata/download_files.html" target="_blank">Source: EPA</a>
+          </div>
         </div>
       </div>
     </div>
