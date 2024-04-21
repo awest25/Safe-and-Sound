@@ -7,7 +7,6 @@ import {
 } from "@remix-run/react";
 import type { LinksFunction } from "@remix-run/node";
 
-import Dashboard from "./routes/dashboard";
 import stylesheet from "~/tailwind.css?url";
 
 // tainwind css styling
@@ -25,7 +24,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <Dashboard />
+        {children}
         <ScrollRestoration />
         <Scripts />
       </body>
