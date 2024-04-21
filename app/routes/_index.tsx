@@ -1,4 +1,4 @@
-import type { MetaFunction } from "@remix-run/node";
+import type { MetaFunction, LoaderFunction } from "@remix-run/node";
 import { useState } from "react";
 import { Map, Source, Layer } from "react-map-gl";
 import type { HeatmapLayer, CircleLayer } from "react-map-gl";
@@ -8,27 +8,23 @@ import { useLoaderData } from "@remix-run/react";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "New Remix App" },
-    { name: "description", content: "Welcome to Remix!" },
+    { title: "Safe and Sound" },
+    { name: "description", content: "Stay safe out there <3" },
   ];
 };
 
-export let loader = async () => {
-  console.log("loader");
+export const loader: LoaderFunction = async () => {
+  console.log("running loader");
   const client = await clientPromise;
   const db = client.db('safe-and-sound');
   const collection = db.collection('airbnb_full');
-  console.log("helo:" + collection);
   const data = await collection.findOne();
-  console.log("data:" + data);
   return json({ data });
 };
 
 export default function Index() {
   const data = useLoaderData<typeof loader>();
   const [showCrime, setShowCrime] = useState(true);
-
-  console.log(data);
 
   const handleCrimeChange = (event) => {
     setShowCrime(event.target.checked)
@@ -150,10 +146,10 @@ export default function Index() {
         mapStyle='mapbox://styles/mapbox/streets-v12'
         mapboxAccessToken="pk.eyJ1IjoiYWp0YWRlbyIsImEiOiJjbHY4Ym56czMwMzJmMmlyeXJpaGx3aHBoIn0.oMQb-_b4NrGmhtVkwn-O1Q"
       >
-        <Source type="geojson" data={data}>
+        {/* <Source type="geojson" data={data}>
           <Layer {...treesHeatLayer} layout={{visibility: showCrime ? 'visible' : 'none'}}/>
           <Layer {...treesPointLayer} layout={{visibility: showCrime ? 'visible' : 'none'}}/>
-        </Source>
+        </Source> */}
       </Map>
     </div>
   )
