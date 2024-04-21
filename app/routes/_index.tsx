@@ -18,9 +18,8 @@ export const loader: LoaderFunction = async () => {
   console.log("Running loader...");
   const client = await connectToDatabase();
   const db = client.db("safe-and-sound");
-  const collection = db.collection("airbnb_full");
 
-  const pipeline = [
+  const airbnbPipeline = [
     {
       $geoNear: {
         near: {
@@ -44,18 +43,25 @@ export const loader: LoaderFunction = async () => {
     }
   ]
 
-  const data = await collection.aggregate(pipeline).toArray();
+  const airbnbData = await db.collection("airbnb_full").aggregate(airbnbPipeline).toArray();
+
+  // TODO: get crimeData, covidData, concentrationData
+
   console.log("Successfully queried data 🎉")
-  return json(data);
+  return json({ 
+    airbnb: airbnbData
+  });
 };
 
 export default function Index() {
   const [showCrime, setShowCrime] = useState(true);
+  const [showCovid, setShowCovid] = useState(true)
+  const [showConcentration, setShowConcentration] = useState(true)
   const loaderData = useLoaderData<typeof loader>();
 
   const airbnbData: FeatureCollection = {
     type: 'FeatureCollection',
-    features: loaderData.map((x) => {
+    features: loaderData.airbnb.map((x) => {
       return {
         type: 'Feature',
         geometry: x.location
@@ -63,17 +69,17 @@ export default function Index() {
     })
   }
 
+  // TODO: get crimeData, covidData, concentrationData in geoJSON format
+
   const handleCrimeChange = (event) => {
     setShowCrime(event.target.checked)
     console.log(event.target.checked)
   }
 
-  // TODO: change the names of these layers to be correct
-  // TODO: use crime data pulled from mongodb
-  const treesHeatLayer: HeatmapLayer = {
-    id: 'trees-heat',
+  const crimeHeatLayer: HeatmapLayer = {
+    id: 'crime-heat',
     type: 'heatmap',
-    source: 'trees',
+    source: 'crime',
     maxzoom: 15,
     paint: {
       // increase weight as diameter breast height increases
@@ -158,10 +164,11 @@ export default function Index() {
         mapboxAccessToken="pk.eyJ1IjoiYWp0YWRlbyIsImEiOiJjbHY4Ym56czMwMzJmMmlyeXJpaGx3aHBoIn0.oMQb-_b4NrGmhtVkwn-O1Q"
       >
         <Source type="geojson" data={airbnbData}>
-          <Layer {...airbnbPointLayer} layout={{ visibility: showCrime ? 'visible' : 'none' }} />
-          {/* <Layer {...treesHeatLayer} layout={{visibility: showCrime ? 'visible' : 'none'}}/>
-          <Layer {...treesPointLayer} layout={{visibility: showCrime ? 'visible' : 'none'}}/> */}
+          <Layer {...airbnbPointLayer} />
         </Source>
+        {/* <Source type="geojson" data={crimeData}>
+          <Layer {...crimeHeatLayer} layout={{visibility: showCrime ? 'visible' : 'none'}}></Layer>
+        </Source> */}
       </Map>
     </div>
   )
