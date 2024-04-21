@@ -5,35 +5,34 @@ export default function DangerList({ propertyDocument }) {
     const [dangerList, setDangerList] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    const fetchDangerList = async () => {
-        setIsLoading(true);
-        try {
-            const response = await fetch('/danger', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ reviews: propertyDocument.reviews.map(review => review.comments) })
-            });
-            if (!response.ok) {
-                throw new Error('Failed to fetch danger list');
-            }
-            const data = await response.json();
-            setDangerList(data.dangerList);
-        } catch (error) {
-            console.error("Error fetching danger list:", error);
-            setDangerList([]); // Handle error by setting an empty list or appropriate error handling
-        }
-        setIsLoading(false);
-    };
-
     useEffect(() => {
+        const fetchDangerList = async () => {
+            setIsLoading(true);
+            try {
+                const response = await fetch('/danger', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ reviews: propertyDocument.reviews.map(review => review.comments) })
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to fetch danger list');
+                }
+                const data = await response.json();
+                setDangerList(data.dangerList);
+            } catch (error) {
+                console.error("Error fetching danger list:", error);
+                setDangerList([]); // Handle error by setting an empty list or appropriate error handling
+            }
+            setIsLoading(false);
+        };
         fetchDangerList(); // Automatically fetch on component mount or define a button to trigger this
     }, []); // Empty dependency array ensures this runs once on mount
 
     return (
         <div>
-            <h1>Danger List</h1>
+            <h1>Possible Hazard List:</h1>
             {isLoading ? (
                 <p>Loading hazards...</p>
             ) : dangerList && dangerList.length > 0 ? (

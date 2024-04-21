@@ -4,7 +4,7 @@ import { Map, Source, Layer} from "react-map-gl";
 import type { HeatmapLayer, CircleLayer } from "react-map-gl";
 import { json } from "@remix-run/react";
 import connectToDatabase from '../utils/mongodb.js';
-import { useLoaderData } from "@remix-run/react";
+import { Link, useLoaderData } from "@remix-run/react";
 import type { FeatureCollection } from 'geojson';
 import { useCallback } from "react";
 import '../overlay.css';
@@ -39,6 +39,12 @@ export const loader: LoaderFunction = async () => {
   const crimeData = await db.collection("crime_la").find({}, {projection: {_id: 1, location: 1}}).limit(1000).toArray();
   console.log("Successfully pulled crime data....")
 
+  const neighborhoodsData = (await db.collection("neighborhoods_la")
+                                     .find({}, {projection: {_id: 1, geometry: 1}})
+                                     .limit(10000).toArray())
+                                     .map((polygon) => polygon.geometry);
+  console.log("Successfully pulled neighborhood data....")
+
   // Create aggregation pipeline to get the concentration data
   const concentrationPipeline = [
     {
@@ -67,10 +73,12 @@ export const loader: LoaderFunction = async () => {
   console.log(`Successfully pulled ${concentrationData.length} concentration data points....`)
 
   console.log("Successfully queried all data 🎉")
+
   return json({ 
     airbnb: airbnbData,
     crime: crimeData,
-    concentration: concentrationData
+    concentration: concentrationData,
+    polygons: neighborhoodsData
   });
 };
 
@@ -89,6 +97,7 @@ export default function Index() {
         type: 'Feature',
         geometry: x.location,
         properties: {
+          _id: x._id,
           listing_url: x.listing_url,
           name: x.name,
           price: x.price,
@@ -115,6 +124,20 @@ export default function Index() {
       return {
         type: 'Feature',
         geometry: x.location
+      }
+    })
+  }
+
+  const polygonsData: FeatureCollection = {
+    type: 'FeatureCollection',
+    features: loaderData.polygons.map((polygon, index) => {
+      return {
+        type: 'Feature',
+        geometry: polygon,
+        properties: {
+          // you can add more properties if needed, like an id
+          id: `polygon-${index}`
+        }
       }
     })
   }
@@ -223,6 +246,17 @@ export default function Index() {
     },
   }
 
+  const neighborhoodLayer: Layer = {
+    id: 'neighborhoods',
+    type: 'line', // Changed from 'fill' to 'line' to represent the dividing lines
+    source: 'neighborhoods',
+    layout: {},
+    paint: {
+      'line-color': '#088', // Color of the line
+      'line-width': 2,     // Width of the line in pixels
+    }
+  };
+  
   return (
     <div className="h-screen">
       <Map
@@ -253,7 +287,9 @@ export default function Index() {
         <Source type="geojson" data={concentrationData}>
           <Layer {...concentrationHeatLayer} layout={{ visibility: showConcentration ? 'visible' : 'none' }} />
         </Source>
-        
+        <Source type="geojson" data={polygonsData}>
+            <Layer {...neighborhoodLayer} />
+          </Source>
       </Map>
       <div className="control-panel">
         <h1>Safe and Sound</h1>
