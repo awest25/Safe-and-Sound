@@ -1,6 +1,6 @@
-# Welcome to Remix + Vite!
+# Welcome to Safe-and-Sound!
 
-📖 See the [Remix docs](https://remix.run/docs) and the [Remix Vite docs](https://remix.run/docs/en/main/future/vite) for details on supported features.
+Safe-and-Sound is an interactive website where you can view the safety of available AirBnBs for rent. We've done the work of extracting, cleaning and transforming meaningful data to be able to acccess for their own aid. Much of our preprocessing is handled through large big-data systems such as Spark (Map-Reduce), pandas for smaller datasets, and mongodb aggregate functions for real-time calculations. The data is then dynamically displayed to the user, where he or she can view a heatmap of the various metrics in real-time. 
 
 ## Development
 
