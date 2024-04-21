@@ -128,15 +128,15 @@ export default function Index() {
         ['linear'],
         ['heatmap-density'],
         0,
-        'rgba(236,222,239,0)',
+        'rgba(255, 235, 235, 0)', // lightest red, almost transparent
         0.2,
-        'rgb(208,209,230)',
+        'rgb(255, 205, 205)', // very light red
         0.4,
-        'rgb(166,189,219)',
+        'rgb(255, 152, 152)', // light red
         0.6,
-        'rgb(103,169,207)',
+        'rgb(255, 99, 99)', // medium red
         0.8,
-        'rgb(28,144,153)'
+        'rgb(255, 0, 0)' // full red
       ],
       // increase radius as zoom increases
       'heatmap-radius': {
@@ -205,7 +205,7 @@ export default function Index() {
           
         </Map>
         <div className="control-panel">
-          <h3>Marker, Popup, NavigationControl and FullscreenControl </h3>
+          <h3>Control Panel </h3>
           <div>
             <label htmlFor="crime">Crime: </label>
             <input type="checkbox" id="crime" name="crime" checked={showCrime} onChange={handleCrimeChange}></input>
