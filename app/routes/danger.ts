@@ -20,6 +20,5 @@ export const action = async ({ request, }) => {
     const result = await model.generateContent(prompt);
     const responseText = result.response.text();
     let dangerList = responseText.split('\n');
-    console.log("Danger list: " + dangerList);
     return json({ 'dangerList': dangerList });
 };

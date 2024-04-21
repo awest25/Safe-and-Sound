@@ -4,14 +4,11 @@ import { useEffect, useState } from 'react';
 export default function DangerList({ propertyDocument }) {
     const [dangerList, setDangerList] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
-    console.log("Entering DangerList");
 
     useEffect(() => {
         const fetchDangerList = async () => {
             setIsLoading(true);
-            console.log("Entering fetchDangerList");
             try {
-                console.log("Fetching danger list...");
                 const response = await fetch('/danger', {
                     method: 'POST',
                     headers: {

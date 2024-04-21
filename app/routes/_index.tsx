@@ -289,7 +289,6 @@ export default function Index() {
           {hoverInfo && (
             <div className="tooltip" style={{left: hoverInfo.x, top: hoverInfo.y}}>
               <h2><Link to={`/${hoverInfo.feature.properties._id}`}>{hoverInfo.feature.properties.name}</Link></h2>
-              <p>{hoverInfo.feature.properties._id}</p>
               <p>{hoverInfo.feature.properties.room_type}</p>
               <p>{hoverInfo.feature.properties.price}</p>
             </div>

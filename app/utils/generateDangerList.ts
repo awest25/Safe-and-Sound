@@ -8,7 +8,6 @@ export const generateDangerList = async (reviewList: String[]) => {
         reviewText += "Review " + (i + 1) + ": " + reviewList[i] + "\n";
     }
 
-    console.log("String: " + reviewText);
     if (!process.env.GEMINI_API_KEY) throw new Error('GEMINI_API_KEY not set');
     const generativeAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const model = generativeAI.getGenerativeModel({ model: "gemini-1.0-pro-latest"});
