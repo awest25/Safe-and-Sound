@@ -22,9 +22,8 @@ export const loader: LoaderFunction = async () => {
   console.log("Running loader...");
   const client = await connectToDatabase();
   const db = client.db("safe-and-sound");
-  const collection = db.collection("airbnb_full");
 
-  const pipeline = [
+  const airbnbPipeline = [
     {
       $geoNear: {
         near: {
@@ -48,24 +47,30 @@ export const loader: LoaderFunction = async () => {
     }
   ]
 
-  const data = await collection.aggregate(pipeline).toArray();
+  const airbnbData = await db.collection("airbnb_full").aggregate(airbnbPipeline).toArray();
+
+  // TODO: get crimeData, covidData, concentrationData
+
   console.log("Successfully queried data 🎉")
-  return json(data);
+  return json({ 
+    airbnb: airbnbData
+  });
 };
 
 export default function Index() {
   const [showCrime, setShowCrime] = useState(true);
-  // const [showPopup, setShowPopup] = useState<boolean>(true);
+  const [showCovid, setShowCovid] = useState(true)
+  const [showConcentration, setShowConcentration] = useState(true)
   const loaderData = useLoaderData<typeof loader>();
   // const [popupInfo, setPopupInfo] = useState(null);
   const [hoverInfo, setHoverInfo] = useState(null);
 
-  console.log(loaderData[0].location.coordinates[0]);
+  // console.log(loaderData[0].location.coordinates[0]);
 
 
   const airbnbData: FeatureCollection = {
     type: 'FeatureCollection',
-    features: loaderData.map((x) => {
+    features: loaderData.airbnb.map((x) => {
       return {
         type: 'Feature',
         geometry: x.location
@@ -73,36 +78,17 @@ export default function Index() {
     })
   }
 
-  const onHover = useCallback(event => {
-    const {
-      features
-    } = event;
-    const hoveredFeature = features && features[0];
-  
-    if (hoveredFeature) {
-      const { coordinates } = hoveredFeature.geometry;
-      console.log(hoveredFeature)
-      // setHoverInfo({
-      //   longitude: event.lngLat[0],
-      //   latitude: event.lngLat[1],
-      //   listing_url: hoveredFeature.listing_url
-      // });
-    } else {
-      setHoverInfo(null);
-    }
-  }, []);
+  // TODO: get crimeData, covidData, concentrationData in geoJSON format
 
   const handleCrimeChange = (event) => {
     setShowCrime(event.target.checked)
     console.log(event.target.checked)
   }
 
-  // TODO: change the names of these layers to be correct
-  // TODO: use crime data pulled from mongodb
-  const treesHeatLayer: HeatmapLayer = {
-    id: 'trees-heat',
+  const crimeHeatLayer: HeatmapLayer = {
+    id: 'crime-heat',
     type: 'heatmap',
-    source: 'trees',
+    source: 'crime',
     maxzoom: 15,
     paint: {
       // increase weight as diameter breast height increases
@@ -185,7 +171,7 @@ export default function Index() {
           }}
           mapStyle='mapbox://styles/mapbox/streets-v12'
           mapboxAccessToken="pk.eyJ1IjoiYWp0YWRlbyIsImEiOiJjbHY4Ym56czMwMzJmMmlyeXJpaGx3aHBoIn0.oMQb-_b4NrGmhtVkwn-O1Q"
-          onMouseMove={onHover}
+          // onMouseMove={onHover}
         >
           <Source type="geojson" data={airbnbData}>
             <Layer {...airbnbPointLayer} layout={{ visibility: showCrime ? 'visible' : 'none' }} />
