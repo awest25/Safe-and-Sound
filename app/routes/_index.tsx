@@ -36,15 +36,41 @@ export const loader: LoaderFunction = async () => {
 
   // Arbitrarily limit the number of crime data points to 1000
   // TODO: write a query that gets the most recent crime data
-  const crimeData = await db.collection("crime_la").find({}).limit(1000).toArray();
+  const crimeData = await db.collection("crime_la").find({}, {projection: {_id: 1, location: 1}}).limit(10000).toArray();
   console.log("Successfully pulled crime data....")
 
-  // TODO: get crimeData, covidData, concentrationData
+  // Create aggregation pipeline to get the concentration data
+  const concentrationPipeline = [
+    {
+      $geoNear: {
+        near: {
+          type: "Point",
+          // somewhere in LA idgaf
+          coordinates: [-118.42477876658972, 34.04836118390573]
+        },
+        key: "location",
+        distanceField: "dist.calculated",
+        // roughly the radius of LA
+        maxDistance: 36055
+      }
+    },
+    {
+      $project: {
+        _id: 1,
+        location: 1,
+        distance: "$dist.calculated"
+      }
+    }
+  ]
+
+  const concentrationData = await db.collection("concentration").aggregate(concentrationPipeline).toArray();
+  console.log(`Successfully pulled ${concentrationData.length} concentration data points....`)
 
   console.log("Successfully queried all data 🎉")
   return json({ 
     airbnb: airbnbData,
-    crime: crimeData
+    crime: crimeData,
+    concentration: concentrationData
   });
 };
 
@@ -53,9 +79,7 @@ export default function Index() {
   const [showCovid, setShowCovid] = useState(true)
   const [showConcentration, setShowConcentration] = useState(true)
   const loaderData = useLoaderData<typeof loader>();
-  // const [popupInfo, setPopupInfo] = useState(null);
   const [hoverInfo, setHoverInfo] = useState(null);
-
 
   const airbnbData: FeatureCollection = {
     type: 'FeatureCollection',
@@ -84,7 +108,16 @@ export default function Index() {
     })
   }
 
-  // TODO: get crimeData, covidData, concentrationData in geoJSON format
+  const concentrationData: FeatureCollection = {
+    type: 'FeatureCollection',
+    features: loaderData.concentration.map((x) => {
+      return {
+        type: 'Feature',
+        geometry: x.location
+      }
+    })
+  }
+
   const onHover = useCallback(event => {
     const {
       features,
@@ -100,10 +133,70 @@ export default function Index() {
     setShowCrime(event.target.checked)
   }
 
+  const handleConcentrationChange = (event) => {
+    setShowConcentration(event.target.checked)
+  }
+
   const crimeHeatLayer: HeatmapLayer = {
     id: 'crime-heat',
     type: 'heatmap',
     source: 'crime',
+    maxzoom: 15,
+    paint: {
+      // increase weight as diameter breast height increases
+      'heatmap-weight': {
+        property: 'dbh',
+        type: 'exponential',
+        stops: [
+          [1, 0],
+          [62, 1]
+        ]
+      },
+      // increase intensity as zoom level increases
+      'heatmap-intensity': {
+        stops: [
+          [11, 1],
+          [15, 3]
+        ]
+      },
+      // assign color values be applied to points depending on their density
+      'heatmap-color': [
+        'interpolate',
+        ['linear'],
+        ['heatmap-density'],
+        0,
+        'rgba(236,222,239,0)',
+        0.2,
+        'rgb(208,209,230)',
+        0.4,
+        'rgb(166,189,219)',
+        0.6,
+        'rgb(103,169,207)',
+        0.8,
+        'rgb(28,144,153)'
+      ],
+      // increase radius as zoom increases
+      'heatmap-radius': {
+        stops: [
+          [11, 15],
+          [15, 20]
+        ]
+      },
+      // decrease opacity to transition into the circle layer
+      'heatmap-opacity': {
+        default: 1,
+        stops: [
+          [14, 1],
+          [15, 0]
+        ]
+      }
+    }
+  }
+
+  const concentrationHeatLayer: HeatmapLayer = {
+    id: 'concentration-heat',
+    type: 'heatmap',
+    source: 'concentration',
     maxzoom: 15,
     paint: {
       // increase weight as diameter breast height increases
@@ -202,6 +295,9 @@ export default function Index() {
           <Source type="geojson" data={crimeData}>
             <Layer {...crimeHeatLayer} layout={{ visibility: showCrime ? 'visible' : 'none' }} />
           </Source>
+          <Source type="geojson" data={concentrationData}>
+            <Layer {...concentrationHeatLayer} layout={{ visibility: showConcentration ? 'visible' : 'none' }} />
+          </Source>
           
         </Map>
         <div className="control-panel">
@@ -209,6 +305,10 @@ export default function Index() {
           <div>
             <label htmlFor="crime">Crime: </label>
             <input type="checkbox" id="crime" name="crime" checked={showCrime} onChange={handleCrimeChange}></input>
+          </div>
+          <div>
+            <label htmlFor="concentration">Concentration: </label>
+            <input type="checkbox" id="concentration" name="concentration" checked={showConcentration} onChange={handleConcentrationChange}></input>
           </div>
         </div>
         </>
