@@ -5,6 +5,7 @@ import type { HeatmapLayer, CircleLayer } from "react-map-gl";
 import { json } from "@remix-run/react";
 import connectToDatabase from '../utils/mongodb.js';
 import { useLoaderData } from "@remix-run/react";
+import type { FeatureCollection } from 'geojson';
 
 export const meta: MetaFunction = () => {
   return [
@@ -18,14 +19,49 @@ export const loader: LoaderFunction = async () => {
   const client = await connectToDatabase();
   const db = client.db("safe-and-sound");
   const collection = db.collection("airbnb_full");
-  const data = await collection.findOne();
-  console.log("Successfully queried data 🎉: ", data)
-  return json({ data });
+
+  const pipeline = [
+    {
+      $geoNear: {
+        near: {
+          type: "Point",
+          coordinates: [-118.42477876658972, 34.04836118390573]
+        },
+        key: "location",
+        distanceField: "dist.calculated",
+        maxDistance: 36055
+      }
+    },
+    {
+      $project: {
+        _id: 1,
+        listing_url: 1,
+        name: 1,
+        address: 1,
+        location: 1,
+        distance: "$dist.calculated"
+      }
+    }
+  ]
+
+  const data = await collection.aggregate(pipeline).toArray();
+  console.log("Successfully queried data 🎉")
+  return json(data);
 };
 
 export default function Index() {
-  const data = useLoaderData<typeof loader>();
   const [showCrime, setShowCrime] = useState(true);
+  const loaderData = useLoaderData<typeof loader>();
+
+  const airbnbData: FeatureCollection = {
+    type: 'FeatureCollection',
+    features: loaderData.map((x) => {
+      return {
+        type: 'Feature',
+        geometry: x.location
+      }
+    })
+  }
 
   const handleCrimeChange = (event) => {
     setShowCrime(event.target.checked)
@@ -90,42 +126,16 @@ export default function Index() {
     }
   }
 
-  const treesPointLayer: CircleLayer = {
-    id: 'trees-point',
+  const airbnbPointLayer: CircleLayer = {
+    id: 'airbnb-point',
     type: 'circle',
-    source: 'trees',
-    minzoom: 14,
+    source: 'airbnb',
     paint: {
-      // increase the radius of the circle as the zoom level and dbh value increases
       'circle-radius': {
-        property: 'dbh',
-        type: 'exponential',
-        stops: [
-          [{ zoom: 15, value: 1 }, 5],
-          [{ zoom: 15, value: 62 }, 10],
-          [{ zoom: 22, value: 1 }, 20],
-          [{ zoom: 22, value: 62 }, 50]
-        ]
-      },
-      'circle-color': {
-        property: 'dbh',
-        type: 'exponential',
-        stops: [
-          [0, 'rgba(236,222,239,0)'],
-          [10, 'rgb(236,222,239)'],
-          [20, 'rgb(208,209,230)'],
-          [30, 'rgb(166,189,219)'],
-          [40, 'rgb(103,169,207)'],
-          [50, 'rgb(28,144,153)'],
-          [60, 'rgb(1,108,89)']
-        ]
-      },
-      'circle-stroke-color': 'white',
-      'circle-stroke-width': 1,
-      'circle-opacity': {
-        stops: [
-          [14, 0],
-          [15, 1]
+        'base': 1.75,
+        'stops': [
+          [12, 2],
+          [22, 180]
         ]
       }
     }
@@ -140,17 +150,18 @@ export default function Index() {
       </div>
       <Map
         initialViewState={{
-          longitude: -79.999732,
-          latitude: 40.4374,
+          longitude: -118.42477876658972,
+          latitude: 34.04836118390573,
           zoom: 12
         }}
         mapStyle='mapbox://styles/mapbox/streets-v12'
         mapboxAccessToken="pk.eyJ1IjoiYWp0YWRlbyIsImEiOiJjbHY4Ym56czMwMzJmMmlyeXJpaGx3aHBoIn0.oMQb-_b4NrGmhtVkwn-O1Q"
       >
-        {/* <Source type="geojson" data={data}>
-          <Layer {...treesHeatLayer} layout={{visibility: showCrime ? 'visible' : 'none'}}/>
-          <Layer {...treesPointLayer} layout={{visibility: showCrime ? 'visible' : 'none'}}/>
-        </Source> */}
+        <Source type="geojson" data={airbnbData}>
+          <Layer {...airbnbPointLayer} layout={{ visibility: showCrime ? 'visible' : 'none' }} />
+          {/* <Layer {...treesHeatLayer} layout={{visibility: showCrime ? 'visible' : 'none'}}/>
+          <Layer {...treesPointLayer} layout={{visibility: showCrime ? 'visible' : 'none'}}/> */}
+        </Source>
       </Map>
     </div>
   )
