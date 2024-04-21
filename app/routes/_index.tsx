@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Map, Source, Layer } from "react-map-gl";
 import type { HeatmapLayer, CircleLayer } from "react-map-gl";
 import { json } from "@remix-run/react";
-import clientPromise from '~/utils/mongodb.js';
+import connectToDatabase from '../utils/mongodb.js';
 import { useLoaderData } from "@remix-run/react";
 
 export const meta: MetaFunction = () => {
@@ -14,11 +14,12 @@ export const meta: MetaFunction = () => {
 };
 
 export const loader: LoaderFunction = async () => {
-  console.log("running loader");
-  const client = await clientPromise;
-  const db = client.db('safe-and-sound');
-  const collection = db.collection('airbnb_full');
+  console.log("Running loader...");
+  const client = await connectToDatabase();
+  const db = client.db("safe-and-sound");
+  const collection = db.collection("airbnb_full");
   const data = await collection.findOne();
+  console.log("Successfully queried data 🎉: ", data)
   return json({ data });
 };
 
