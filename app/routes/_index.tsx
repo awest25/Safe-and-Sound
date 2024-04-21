@@ -33,16 +33,40 @@ export const loader: LoaderFunction = async () => {
                         room_type: 1,
                         review_scores_rating: 1,
                       }
-  const airbnbData = await db.collection("airbnb_full").find({}, { projection: fieldsWeWant }).limit(10).toArray();
+  const airbnbData = await db.collection("airbnb_full").find({}, { projection: fieldsWeWant }).toArray();
   console.log("Successfully pulled airbnb data....")
 
   // Arbitrarily limit the number of crime data points to 1000
   // TODO: write a query that gets the most recent crime data
-  const crimeData = await db.collection("crime_la").find({}, {projection: {_id: 1, location: 1}}).limit(10).toArray();
+  const crimeData = await db.collection("crime_la").find({}, {projection: {_id: 1, location: 1}}).limit(10000).toArray();
   console.log("Successfully pulled crime data....")
 
-  const concentrationData = await db.collection("concentration").find({}, {projection: {_id: 1, location: 1}}).limit(1000).toArray();
-  console.log("Successfully pulled concentration data....")
+  // Create aggregation pipeline to get the concentration data
+  const concentrationPipeline = [
+    {
+      $geoNear: {
+        near: {
+          type: "Point",
+          // somewhere in LA idgaf
+          coordinates: [-118.42477876658972, 34.04836118390573]
+        },
+        key: "location",
+        distanceField: "dist.calculated",
+        // roughly the radius of LA
+        maxDistance: 36055
+      }
+    },
+    {
+      $project: {
+        _id: 1,
+        location: 1,
+        distance: "$dist.calculated"
+      }
+    }
+  ]
+
+  const concentrationData = await db.collection("concentration").aggregate(concentrationPipeline).toArray();
+  console.log(`Successfully pulled ${concentrationData.length} concentration data points....`)
 
   console.log("Successfully queried all data 🎉")
   return json({ 
